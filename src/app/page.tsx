@@ -6,7 +6,7 @@ const Page = () => (
   <Grid2 container direction='column' spacing={3} mt='1rem'>
     <Grid2>
       <Typography variant='h3' fontWeight='bold'>
-        React-Form Test
+        React-Form Exercise
       </Typography>
     </Grid2>
     <Grid2>
