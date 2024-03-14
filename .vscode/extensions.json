@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "zhuangtongfa.material-theme",
+    "dbaeumer.vscode-eslint",
+    "EditorConfig.EditorConfig",
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+    "aaron-bond.better-comments",
+    "esbenp.prettier-vscode",
+    "PKief.material-icon-theme"
+  ]
+}

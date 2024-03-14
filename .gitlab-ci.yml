@@ -1,0 +1,47 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+
+build-image:
+  only:
+    - tags
+  stage: build
+  image: docker:latest
+  services:
+    - name: docker:20.10.16-dind
+      command: ['--mtu=1300']
+  before_script:
+    - until docker info; do sleep 1; done
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG
+
+update-manifests:
+  stage: deploy
+  image: ubuntu:20.04
+  before_script:
+    # Install wget
+    - apt-get update -y
+    - apt-get install wget -y
+    - apt-get install git -y
+    # Install yq
+    - wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.30.8/yq_linux_amd64
+    - chmod a+x /usr/local/bin/yq
+  script:
+    - TEMP_FOLDER="$(mktemp -d)"
+    - echo Clone the repository...
+    - git clone -b main https://oauth2:${CI_PUSH_TOKEN}@gitlab.lrz.de/mobile-ifi/kubernetes.git ${TEMP_FOLDER}
+    - cd ${TEMP_FOLDER}/Websites/digicon-vote
+    - CONTAINER_IMAGE_TAG=$CI_COMMIT_REF_SLUG REGISTRY=$CI_REGISTRY IMAGE_NAME=$CI_REGISTRY_IMAGE yq e -i '.spec.template.spec.containers[0].image = strenv(IMAGE_NAME)+":"+strenv(CONTAINER_IMAGE_TAG)' ./deployment.yml
+    - cd ../../
+    - git config --global user.email "gitlab@gitlab.com"
+    - git config --global user.name "GitLab CI/CD"
+    - git add .
+    - git commit -m "Update deployment values for $CONTAINER_IMAGE_TAG"
+    - git push -u origin main
+  only:
+    - tags
